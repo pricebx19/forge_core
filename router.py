@@ -1,5 +1,9 @@
 """Router implementation for Forge framework.
 
+DEPRECATED: This module is deprecated and will be removed in a future version.
+Please use the forge_router package instead, which provides a more complete
+and robust implementation of the router functionality.
+
 This module provides router classes for the Forge framework.
 Routers are responsible for matching requests to handlers.
 """
@@ -10,7 +14,11 @@ from forge_core.interfaces import IRequest, IResponse
 
 
 class IRouter(Protocol):
-    """Protocol for router components."""
+    """Protocol for router components.
+    
+    DEPRECATED: This protocol is deprecated and will be removed in a future version.
+    Please use the forge_router.IRouter protocol instead.
+    """
     
     @property
     def routes(self) -> List[Any]:
@@ -40,6 +48,9 @@ class IRouter(Protocol):
 
 class SimpleRouter:
     """A simple router implementation for testing.
+    
+    DEPRECATED: This class is deprecated and will be removed in a future version.
+    Please use forge_router.Router instead.
     
     This router supports basic path matching and path parameters.
     """

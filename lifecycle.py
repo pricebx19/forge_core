@@ -199,6 +199,11 @@ class LifecycleManager:
                 processed_request = await result
             else:
                 processed_request = result
+            
+            # If a hook returns None, use the original request
+            if processed_request is None:
+                processed_request = request
+        
         return processed_request
     
     async def after_request(self, request: Any, response: Any) -> Any:
@@ -219,6 +224,11 @@ class LifecycleManager:
                 processed_response = await result
             else:
                 processed_response = result
+                
+            # If a hook returns None, use the original response
+            if processed_response is None:
+                processed_response = response
+        
         return processed_response
     
     async def handle_error(self, error: Exception, request: Any) -> Optional[Any]:
@@ -229,7 +239,8 @@ class LifecycleManager:
             request: The request object.
             
         Returns:
-            A response if any error hook handles the exception, or None.
+            The response from the first hook that successfully handles the error,
+            or None if no hook successfully handles the error.
         """
         for hook in self._hooks[LifecyclePhase.ERROR]:
             try:
@@ -237,11 +248,43 @@ class LifecycleManager:
                 # Handle both synchronous and asynchronous hooks
                 if hasattr(result, "__await__"):
                     response = await result
-                    if response:
-                        return response
-                elif result:
-                    return result
-            except Exception:
-                # If an error hook fails, continue to the next one
+                else:
+                    response = result
+                
+                if response is not None:
+                    return response
+            except Exception as hook_error:
+                # Log the error but continue to the next hook
+                print(f"Error in error hook: {hook_error}")
                 continue
+        
+        return None
+    
+    async def trigger(self, phase: LifecyclePhase, *args: Any, **kwargs: Any) -> Optional[Any]:
+        """Trigger hooks for a specific lifecycle phase.
+        
+        This is a unified entry point for triggering lifecycle hooks,
+        which delegates to the appropriate method based on the phase.
+        
+        Args:
+            phase: The lifecycle phase to trigger.
+            *args: Positional arguments to pass to the hooks.
+            **kwargs: Keyword arguments to pass to the hooks.
+            
+        Returns:
+            The result of the hooks, if any.
+        """
+        if phase == LifecyclePhase.BEFORE_REQUEST:
+            return await self.before_request(args[0] if args else kwargs.get('request'))
+        elif phase == LifecyclePhase.AFTER_REQUEST:
+            return await self.after_request(
+                args[0] if len(args) > 0 else kwargs.get('request'),
+                args[1] if len(args) > 1 else kwargs.get('response')
+            )
+        elif phase == LifecyclePhase.ERROR:
+            return await self.handle_error(
+                args[0] if len(args) > 0 else kwargs.get('error'),
+                args[1] if len(args) > 1 else kwargs.get('request')
+            )
+        
         return None 
