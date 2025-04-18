@@ -4,8 +4,8 @@ import pytest
 
 # Use package imports for consistent importing
 from forge_core.middleware import Middleware, MiddlewareStack
-from forge_core.request import Request
-from forge_core.response import Response
+from forge_http import Request
+from forge_http import Response
 
 
 class MockTestMiddleware(Middleware):

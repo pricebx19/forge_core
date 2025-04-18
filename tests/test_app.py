@@ -4,7 +4,7 @@ import pytest
 
 # Use package imports for consistent importing
 from forge_core.app import App, ForgeApplication
-from forge_core.response import Response
+from forge_http import Response
 
 
 def test_app_creation():

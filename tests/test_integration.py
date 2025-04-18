@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, AsyncMock
 
 # Use package imports for consistent importing
 from forge_core.app import App
-from forge_core.request import Request
-from forge_core.response import Response
+from forge_http import Request
+from forge_http import Response
 from forge_core.middleware import Middleware
 
 
@@ -66,7 +66,9 @@ def app():
         elif request.url == "/api/protected":
             async def protected_handler(req):
                 if not req.attributes.get("authenticated", False):
-                    return Response.json({"error": "Unauthorized"}, status_code=401)
+                    return Response.json({
+                        "error": "Unauthorized"
+                    }, status=401)
                 
                 return Response.json({
                     "success": True,
@@ -89,7 +91,7 @@ def app():
             return error_handler
         else:
             async def not_found(req):
-                return Response.text("Not Found", status_code=404)
+                return Response.text("Not Found", status=404)
             return not_found
     
     # Create mock implementations
@@ -100,7 +102,7 @@ def app():
     async def handle_value_error(error, request):
         return Response.json({
             "error": str(error)
-        }, status_code=400)
+        }, status=400)
     
     # Replace the real kernel with our mock
     app._kernel = mock_kernel
@@ -131,9 +133,9 @@ def app():
             response = await handler(processed_request)
         except ValueError as e:
             # Special case for error handling test
-            response = Response.json({"error": str(e)}, status_code=400)
+            response = Response.json({"error": str(e)}, status=400)
         except Exception as e:
-            response = Response(content=str(e), status_code=500)
+            response = Response(content=str(e), status=500)
             
         # Process response through middleware
         processed_response = response

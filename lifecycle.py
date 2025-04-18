@@ -219,4 +219,29 @@ class LifecycleManager:
                 processed_response = await result
             else:
                 processed_response = result
-        return processed_response 
+        return processed_response
+    
+    async def handle_error(self, error: Exception, request: Any) -> Optional[Any]:
+        """Execute hooks when an error occurs during request processing.
+        
+        Args:
+            error: The exception that was raised.
+            request: The request object.
+            
+        Returns:
+            A response if any error hook handles the exception, or None.
+        """
+        for hook in self._hooks[LifecyclePhase.ERROR]:
+            try:
+                result = hook(error, request)
+                # Handle both synchronous and asynchronous hooks
+                if hasattr(result, "__await__"):
+                    response = await result
+                    if response:
+                        return response
+                elif result:
+                    return result
+            except Exception:
+                # If an error hook fails, continue to the next one
+                continue
+        return None 

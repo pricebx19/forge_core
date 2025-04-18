@@ -4,29 +4,19 @@ This module provides the main App class that serves as the entry point for all F
 The App class manages the application lifecycle, dependency injection, and runtime configuration.
 """
 
-from typing import Any, Dict, Optional, Protocol, TypeVar, List
+from typing import Any, Dict, Optional, TypeVar, List, Callable
 
 from kink import Container
 
 from forge_core.config import Config
 from forge_core.lifecycle import LifecycleManager, LifecyclePhase
 from forge_core.middleware import MiddlewareManager
+from forge_core.router import IRouter, SimpleRouter
+
+# Import HTTP components from forge_http
+from forge_http import Request, Response
 
 T = TypeVar("T")
-
-
-class IRouter(Protocol):
-    """Protocol for router components."""
-    
-    @property
-    def routes(self) -> List[Any]:
-        """Get all routes registered with this router."""
-        ...
-    
-    @property
-    def middleware(self) -> List[Any]:
-        """Get middleware applied to all routes in this router."""
-        ...
 
 
 class App:
@@ -55,6 +45,9 @@ class App:
         from forge_core.kernel import Kernel
         self._kernel = Kernel(self)
         self._routers = []
+        # Create a default router for convenience methods
+        self._default_router = SimpleRouter()
+        self.register_router(self._default_router)
 
     @classmethod
     def create(cls, **kwargs: Any) -> "App":
@@ -122,59 +115,7 @@ class App:
         methods = methods or ["GET"]
         
         def decorator(func):
-            # Create a route object
-            route = {
-                "path": path,
-                "methods": methods,
-                "handler": func
-            }
-            
-            # In a real implementation, we would add this to a router
-            # For testing purposes, we'll add a match method to the route
-            def match(path_to_match, method_to_match):
-                # Simple path parameter handling
-                if "{" in path and "}" in path:
-                    # Extract path params from the pattern
-                    path_parts = path.split("/")
-                    check_parts = path_to_match.split("/")
-                    
-                    # Check if path structures match
-                    if len(path_parts) != len(check_parts):
-                        raise ValueError("Route not found")
-                    
-                    params = {}
-                    for i, part in enumerate(path_parts):
-                        if part.startswith("{") and part.endswith("}"):
-                            # Extract parameter name
-                            param_name = part[1:-1]
-                            params[param_name] = check_parts[i]
-                        elif part != check_parts[i]:
-                            raise ValueError("Route not found")
-                    
-                    if method_to_match in methods:
-                        return route, params
-                elif path_to_match == path and method_to_match in methods:
-                    return route, {}
-                
-                raise ValueError("Route not found")
-            
-            route["match"] = match
-            
-            # Add the route to the kernel
-            class SimpleRouter:
-                @property
-                def routes(self):
-                    return [route]
-                
-                @property
-                def middleware(self):
-                    return []
-                
-                def match(self, path_to_match, method_to_match):
-                    return route.get("match")(path_to_match, method_to_match)
-            
-            self.register_router(SimpleRouter())
-            
+            self._default_router.add_route(path, func, methods)
             return func
         
         return decorator

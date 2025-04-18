@@ -4,8 +4,8 @@ import json
 import pytest
 
 # Use package imports for consistent importing
-from forge_core.request import Request
-from forge_core.response import Response
+from forge_http import Request
+from forge_http import Response
 
 
 def test_request_initialization():
@@ -57,6 +57,7 @@ def test_request_content_type():
         headers={"Content-Type": "application/json; charset=utf-8"}
     )
     
+    # Content type should be parsed to just the MIME type
     assert request.content_type == "application/json"
 
 

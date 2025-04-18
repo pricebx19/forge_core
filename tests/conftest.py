@@ -12,9 +12,11 @@ sys.path.insert(0, str(repo_root))
 
 # Import the modules using package imports
 from forge_core.app import App, ForgeApplication
-from forge_core.request import Request
-from forge_core.response import Response
+from forge_http import Request
+from forge_http import Response
 from forge_core.config import Config
+from forge_core.lifecycle import LifecycleManager
+from forge_core.middleware import MiddlewareStack
 
 
 @pytest.fixture
@@ -86,4 +88,19 @@ def form_request():
         url="/api/form",
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         body=b"name=test&value=123"
-    ) 
+    )
+
+
+class MockApp:
+    """Mock App for testing."""
+    
+    def __init__(self):
+        self.config = Config()
+        self.lifecycle = LifecycleManager(self)
+        self.middleware = MiddlewareStack()
+
+
+@pytest.fixture
+def mock_app():
+    """Return a mock app for testing."""
+    return MockApp() 
